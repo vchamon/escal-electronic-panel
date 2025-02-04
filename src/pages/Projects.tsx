@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 
 import { fetchProjects } from '../services/projects'
-import { useLocation, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Project, Result, UserChoice, UserVote } from '../types'
 import { getUserIp } from '../services/user-ip'
 
