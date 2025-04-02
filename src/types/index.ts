@@ -16,9 +16,4 @@ export enum UserChoice {
   ABSTAIN = 'ABSTAIN'
 }
 
-export type UserVote = Record<string, UserChoice | null>
-
-export type Result = {
-  userIp?: string
-  userVote: UserVote
-}
+export type UserVotes = Record<string, UserChoice | null>

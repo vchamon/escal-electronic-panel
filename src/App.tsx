@@ -4,7 +4,7 @@ import Projects from "./pages/Projects"
 const App = () => {
   return (
     <Routes>
-      <Route path="/projects/:socialId" element={<Projects />} />
+      <Route path="/projects/:councilSocialId" element={<Projects />} />
     </Routes>
   )
 }
