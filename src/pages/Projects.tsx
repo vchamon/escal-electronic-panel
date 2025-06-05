@@ -3,8 +3,8 @@ import { format } from 'date-fns'
 
 import { fetchProjects } from '../services/project'
 import { useParams } from 'react-router-dom'
-import { Project, Result, UserChoice, UserVote } from '../types'
-import { getUserIp } from '../services/user'
+import { Project, UserChoice, UserVote } from '../types'
+import { getUserIp, getUserVote, saveUserVote } from '../services/user'
 
 const UserChoiceLabels = {
   [UserChoice.YES]: 'A favor',
@@ -16,12 +16,15 @@ const Projects = () => {
   const [userIp, setUserIp] = useState<string>()
   const [projects, setProjects] = useState<Project[]>([])
   const [userVote, setUserVote] = useState<UserVote>({})
-  const [result, setResult] = useState<Result>()
 
   const { socialId } = useParams()
 
   useEffect(() => {
-    getUserIp().then(setUserIp)
+    getUserIp()
+      .then((ip) => {
+        setUserIp(ip)
+        setUserVote(getUserVote(socialId as string, ip)) 
+      })
 
     fetchProjects(socialId as string).then(setProjects)
   }, [])
@@ -35,12 +38,16 @@ const Projects = () => {
     })
   }, [userVote])
 
+  const handleConfirmUserVote = useCallback(() => {
+    saveUserVote(socialId as string, userIp as string, userVote)
+  }, [socialId, userIp, userVote])
+
   const isSubmitDisabled = useMemo(() => Object.values(userVote).every((value) => value === null), [userVote])
 
   const renderProjects = useMemo(() => {
     return projects?.map((project) => {
       return (
-        <div className='flex flex-col gap-4 border border-gray-200 rounded-lg px-6 py-4 text-sm w-1/2 max-lg:w-full max-xl:w-2/3'>
+        <div key={project.idProjeto} className='flex flex-col gap-4 border border-gray-200 rounded-lg px-6 py-4 text-sm w-1/2 max-lg:w-full max-xl:w-2/3'>
           <div className='flex flex-col gap-2 w-full'>
             <span className='font-bold'>
               {`${project.tipo_Proposicao} nº ${project.numero_Projeto} de ${format(project.data_Projeto, 'dd/MM/yyyy')}`}
@@ -93,29 +100,11 @@ const Projects = () => {
           <button
             className={`px-8 py-2 rounded-lg text-white font-semibold bg-gray-${isSubmitDisabled ? '300' : '500'}`}
             disabled={isSubmitDisabled}
-            onClick={() => {
-              setResult({
-                userIp,
-                userVote
-              })
-            }}
+            onClick={handleConfirmUserVote}
           >
             Confirmar
           </button>
         </div>
-        {result && (
-          <div className='flex flex-col gap-2'>
-            <div><strong>IP: </strong>{result?.userIp}</div>
-            <div>
-              {Object.entries(result.userVote)
-                .filter(([, userChoice]) => !!userChoice)
-                .map(([projectId, userChoice]) => (
-                  <div><strong>{`Projeto ${projectId}: `}</strong>{UserChoiceLabels[userChoice as UserChoice]}</div>
-                ))
-              }
-            </div>
-          </div>
-        )}
       </div>
 
     </div>

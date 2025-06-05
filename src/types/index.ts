@@ -17,8 +17,3 @@ export enum UserChoice {
 }
 
 export type UserVote = Record<string, UserChoice | null>
-
-export type Result = {
-  userIp?: string
-  userVote: UserVote
-}
