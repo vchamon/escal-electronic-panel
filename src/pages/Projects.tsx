@@ -16,6 +16,7 @@ const Projects = () => {
   const [userIp, setUserIp] = useState<string>()
   const [projects, setProjects] = useState<Project[]>([])
   const [userVotes, setUserVotes] = useState<UserVotes>({})
+  const [showThankYouModal, setShowThankYouModal] = useState(false)
 
   const { councilSocialId } = useParams()
 
@@ -31,21 +32,26 @@ const Projects = () => {
   const handleChangeUserVote = useCallback((projectId: number, userChoice: UserChoice) => {
     const id = projectId.toString()
 
-    setUserVotes({
-      ...userVotes,
-      [id]: userVotes[id] === userChoice ? null : userChoice
-    })
-  }, [userVotes])
+    setUserVotes((previousVotes) => ({
+      ...previousVotes,
+      [id]: previousVotes[id] === userChoice ? null : userChoice,
+    }))
+  }, [])
 
   const handleSubmitVotes = useCallback(() => {
     postUserVotes(councilSocialId!, userIp as string, userVotes)
+    setShowThankYouModal(true)
   }, [councilSocialId, userIp, userVotes])
 
   const handleClearVotes = useCallback(() => {
     clearUserVotes(councilSocialId!, userIp as string)
+    setUserVotes({})
   }, [councilSocialId, userIp])
 
-  const isSubmitDisabled = useMemo(() => Object.values(userVotes).every((value) => value === null), [userVotes])
+  const hasVotes = useMemo(
+    () => projects.some((project) => userVotes[project.idProjeto.toString()] != null),
+    [projects, userVotes],
+  )
 
   const renderProjects = useMemo(() => {
     return projects?.map((project) => {
@@ -63,19 +69,19 @@ const Projects = () => {
           <div className='w-full border-t'></div>
           <div className='flex justify-evenly'>
             <button
-              className={`px-4 py-2 rounded-lg bg-success-${userVotes[project.idProjeto] === UserChoice.YES ? '500' : '100'}`}
+              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.YES ? 'bg-success-500' : 'bg-success-100'}`}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.YES)}
             >
               {UserChoiceLabels[UserChoice.YES]}
             </button>
             <button
-              className={`px-4 py-2 rounded-lg bg-alert-${userVotes[project.idProjeto] === UserChoice.ABSTAIN ? '500' : '100'}`}
+              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.ABSTAIN ? 'bg-alert-500' : 'bg-alert-100'}`}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.ABSTAIN)}
             >
               {UserChoiceLabels[UserChoice.ABSTAIN]}
             </button>
             <button
-              className={`px-4 py-2 rounded-lg bg-error-${userVotes[project.idProjeto] === UserChoice.NO ? '500' : '100'}`}
+              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.NO ? 'bg-error-500' : 'bg-error-100'}`}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.NO)}
             >
               {UserChoiceLabels[UserChoice.NO]}
@@ -101,14 +107,15 @@ const Projects = () => {
         {renderProjects}
         <div className='flex justify-between mt-4'>
           <button
-            className={`px-8 py-2 rounded-lg text-white font-semibold bg-gray-${isSubmitDisabled ? '300' : '500'}`}
-            disabled={isSubmitDisabled}
+            className={`px-8 py-2 rounded-lg text-white font-semibold ${hasVotes ? 'bg-gray-500' : 'bg-gray-300'}`}
+            disabled={!hasVotes}
             onClick={handleSubmitVotes}
           >
             Confirmar
           </button>
           <button
-            className='px-8 py-2 rounded-lg text-gray-50 font-semibold bg-white border-gray-50'
+            className={`px-8 py-2 rounded-lg font-semibold border ${hasVotes ? 'text-gray-700 border-gray-400 hover:bg-gray-50' : 'text-gray-300 border-gray-200 cursor-not-allowed'}`}
+            disabled={!hasVotes}
             onClick={handleClearVotes}
           >
             Limpar votos
@@ -116,6 +123,23 @@ const Projects = () => {
         </div>
       </div>
 
+      {showThankYouModal && (
+        <dialog
+          open
+          className='fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/50 p-0'
+        >
+          <div className='bg-white rounded-lg px-8 py-6 text-lg font-semibold shadow-lg text-center'>
+            <p>Agradecemos pelo seu voto</p>
+            <button
+              type='button'
+              className='mt-6 px-6 py-2 rounded-lg text-white font-semibold bg-gray-500'
+              onClick={() => setShowThankYouModal(false)}
+            >
+              Fechar
+            </button>
+          </div>
+        </dialog>
+      )}
     </div>
   ) : null
 }
