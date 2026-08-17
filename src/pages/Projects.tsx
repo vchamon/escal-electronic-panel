@@ -59,7 +59,7 @@ const Projects = () => {
         <div className='flex flex-col gap-4 border border-gray-200 rounded-lg px-6 py-4 text-sm w-1/2 max-lg:w-full max-xl:w-2/3'>
           <div className='flex flex-col gap-2 w-full'>
             <span className='font-bold'>
-              {`${project.tipo_Proposicao} nº ${project.numero_Projeto} de ${format(project.data_Projeto, 'dd/MM/yyyy')}`}
+              {`${project.tipo_Proposicao ?? "Projeto de Lei"} nº ${project.numero_Projeto} de ${format(project.data_Projeto, 'dd/MM/yyyy')}`}
             </span>
             <span>{project.ementa}</span>
             <div className='flex justify-end'>
