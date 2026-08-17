@@ -105,7 +105,7 @@ const Projects = () => {
           Dê a sua opinião sobre o(s) projeto(s) abaixo:
         </div>
         {renderProjects}
-        <div className='flex justify-between mt-4'>
+        <div className='flex justify-center gap-4 mt-4'>
           <button
             className={`px-8 py-2 rounded-lg text-white font-semibold ${hasVotes ? 'bg-gray-500' : 'bg-gray-300'}`}
             disabled={!hasVotes}
