@@ -13,7 +13,7 @@ export const getPreviousUserVotes = (councilSocialId: string, userIp: string): U
   return JSON.parse(userVotes) as UserVotes
 }
 
-export const postUserVotes = (councilSocialId: string, userIp: string, userVotes: UserVotes) => {
+export const saveUserVotesOnCache = (councilSocialId: string, userIp: string, userVotes: UserVotes) => {
   localStorage.setItem(buildCacheKey(councilSocialId, userIp), JSON.stringify(userVotes))
 }
 

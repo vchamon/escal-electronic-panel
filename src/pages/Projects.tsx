@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 
-import { fetchProjects } from '../services/projects'
+import { fetchProjects, sendProjectVotes } from '../services/projects'
 import { useParams } from 'react-router-dom'
 import { Project, UserChoice, UserVotes } from '../types'
-import { getUserIp, getPreviousUserVotes, postUserVotes, clearUserVotes } from '../services/user'
+import { getUserIp, getPreviousUserVotes, saveUserVotesOnCache, clearUserVotes } from '../services/user'
 
 const UserChoiceLabels = {
   [UserChoice.YES]: 'A favor',
@@ -38,8 +38,9 @@ const Projects = () => {
     }))
   }, [])
 
-  const handleSubmitVotes = useCallback(() => {
-    postUserVotes(councilSocialId!, userIp as string, userVotes)
+  const handleSubmitVotes = useCallback(async () => {
+    await sendProjectVotes(councilSocialId!, userIp as string, userVotes)
+    saveUserVotesOnCache(councilSocialId!, userIp as string, userVotes)
     setShowThankYouModal(true)
   }, [councilSocialId, userIp, userVotes])
 
@@ -75,16 +76,16 @@ const Projects = () => {
               {UserChoiceLabels[UserChoice.YES]}
             </button>
             <button
-              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.ABSTAIN ? 'bg-alert-500' : 'bg-alert-100'}`}
-              onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.ABSTAIN)}
-            >
-              {UserChoiceLabels[UserChoice.ABSTAIN]}
-            </button>
-            <button
               className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.NO ? 'bg-error-500' : 'bg-error-100'}`}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.NO)}
             >
               {UserChoiceLabels[UserChoice.NO]}
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.ABSTAIN ? 'bg-alert-500' : 'bg-alert-100'}`}
+              onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.ABSTAIN)}
+            >
+              {UserChoiceLabels[UserChoice.ABSTAIN]}
             </button>
           </div>
         </div>
