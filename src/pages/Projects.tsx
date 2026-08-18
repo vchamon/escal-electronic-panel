@@ -12,20 +12,34 @@ const UserChoiceLabels = {
   [UserChoice.NO]: 'Contra',
 }
 
+const areVotesEqual = (currentVotes: UserVotes, cachedVotes: UserVotes): boolean => {
+  const projectIds = new Set([...Object.keys(currentVotes), ...Object.keys(cachedVotes)])
+
+  return [...projectIds].every((projectId) => currentVotes[projectId] === cachedVotes[projectId])
+}
+
 const Projects = () => {
   const [userIp, setUserIp] = useState<string>()
   const [projects, setProjects] = useState<Project[]>([])
   const [userVotes, setUserVotes] = useState<UserVotes>({})
+  const [cacheVersion, setCacheVersion] = useState(0)
   const [showThankYouModal, setShowThankYouModal] = useState(false)
 
   const { councilSocialId } = useParams()
+
+  const cachedVotes = useMemo(() => {
+    if (!userIp) return {}
+
+    return getPreviousUserVotes(councilSocialId!, userIp)
+  }, [councilSocialId, userIp, cacheVersion])
 
   useEffect(() => {
     fetchProjects(councilSocialId!).then(setProjects)
     getUserIp()
       .then((ip) => {
         setUserIp(ip)
-        setUserVotes(getPreviousUserVotes(councilSocialId!, ip))
+        const previousVotes = getPreviousUserVotes(councilSocialId!, ip)
+        setUserVotes(previousVotes)
       })
   }, [councilSocialId])
 
@@ -41,17 +55,24 @@ const Projects = () => {
   const handleSubmitVotes = useCallback(async () => {
     await sendProjectVotes(councilSocialId!, userIp as string, userVotes)
     saveUserVotesOnCache(councilSocialId!, userIp as string, userVotes)
+    setCacheVersion((version) => version + 1)
     setShowThankYouModal(true)
   }, [councilSocialId, userIp, userVotes])
 
   const handleClearVotes = useCallback(() => {
     clearUserVotes(councilSocialId!, userIp as string)
     setUserVotes({})
+    setCacheVersion((version) => version + 1)
   }, [councilSocialId, userIp])
 
   const hasVotes = useMemo(
     () => projects.some((project) => userVotes[project.idProjeto.toString()] != null),
     [projects, userVotes],
+  )
+
+  const canSubmitVotes = useMemo(
+    () => hasVotes && !areVotesEqual(userVotes, cachedVotes),
+    [hasVotes, userVotes, cachedVotes],
   )
 
   const renderProjects = useMemo(() => {
@@ -108,8 +129,8 @@ const Projects = () => {
         {renderProjects}
         <div className='flex justify-center gap-4 mt-4'>
           <button
-            className={`px-8 py-2 rounded-lg text-white font-semibold ${hasVotes ? 'bg-gray-500' : 'bg-gray-300'}`}
-            disabled={!hasVotes}
+            className={`px-8 py-2 rounded-lg text-white font-semibold ${canSubmitVotes ? 'bg-gray-500' : 'bg-gray-300'}`}
+            disabled={!canSubmitVotes}
             onClick={handleSubmitVotes}
           >
             Confirmar
