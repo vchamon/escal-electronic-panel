@@ -17,6 +17,7 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [userVotes, setUserVotes] = useState<UserVotes>({})
   const [showThankYouModal, setShowThankYouModal] = useState(false)
+  const [votesSubmitted, setVotesSubmitted] = useState(false)
 
   const { councilSocialId } = useParams()
 
@@ -26,22 +27,29 @@ const Projects = () => {
   }, [councilSocialId])
 
   const handleChangeUserVote = useCallback((projectId: number, userChoice: UserChoice) => {
+    if (votesSubmitted) return
+
     const id = projectId.toString()
 
     setUserVotes((previousVotes) => ({
       ...previousVotes,
       [id]: previousVotes[id] === userChoice ? null : userChoice,
     }))
-  }, [])
+  }, [votesSubmitted])
 
   const handleSubmitVotes = useCallback(async () => {
+    if (votesSubmitted) return
+
     await sendProjectVotes(councilSocialId!, userIp as string, userVotes)
+    setVotesSubmitted(true)
     setShowThankYouModal(true)
-  }, [councilSocialId, userIp, userVotes])
+  }, [councilSocialId, userIp, userVotes, votesSubmitted])
 
   const handleClearVotes = useCallback(() => {
+    if (votesSubmitted) return
+
     setUserVotes({})
-  }, [])
+  }, [votesSubmitted])
 
   const hasVotes = useMemo(
     () => projects.some((project) => userVotes[project.idProjeto.toString()] != null),
@@ -64,19 +72,22 @@ const Projects = () => {
           <div className='w-full border-t'></div>
           <div className='flex justify-evenly'>
             <button
-              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.YES ? 'bg-success-500' : 'bg-success-100'}`}
+              className={`px-4 py-2 rounded-lg disabled:cursor-not-allowed disabled:opacity-60 ${userVotes[project.idProjeto.toString()] === UserChoice.YES ? 'bg-success-500' : 'bg-success-100'}`}
+              disabled={votesSubmitted}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.YES)}
             >
               {UserChoiceLabels[UserChoice.YES]}
             </button>
             <button
-              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.NO ? 'bg-error-500' : 'bg-error-100'}`}
+              className={`px-4 py-2 rounded-lg disabled:cursor-not-allowed disabled:opacity-60 ${userVotes[project.idProjeto.toString()] === UserChoice.NO ? 'bg-error-500' : 'bg-error-100'}`}
+              disabled={votesSubmitted}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.NO)}
             >
               {UserChoiceLabels[UserChoice.NO]}
             </button>
             <button
-              className={`px-4 py-2 rounded-lg ${userVotes[project.idProjeto.toString()] === UserChoice.ABSTAIN ? 'bg-alert-500' : 'bg-alert-100'}`}
+              className={`px-4 py-2 rounded-lg disabled:cursor-not-allowed disabled:opacity-60 ${userVotes[project.idProjeto.toString()] === UserChoice.ABSTAIN ? 'bg-alert-500' : 'bg-alert-100'}`}
+              disabled={votesSubmitted}
               onClick={() => handleChangeUserVote(project.idProjeto, UserChoice.ABSTAIN)}
             >
               {UserChoiceLabels[UserChoice.ABSTAIN]}
@@ -85,7 +96,7 @@ const Projects = () => {
         </div>
       )
     })
-  }, [handleChangeUserVote, projects, userVotes])
+  }, [handleChangeUserVote, projects, userVotes, votesSubmitted])
 
   return projects.length > 0 ? (
     <div className='container mx-auto px-4 my-16'>
@@ -102,15 +113,15 @@ const Projects = () => {
         {renderProjects}
         <div className='flex justify-center gap-4 mt-4'>
           <button
-            className={`px-8 py-2 rounded-lg text-white font-semibold ${hasVotes ? 'bg-gray-500' : 'bg-gray-300'}`}
-            disabled={!hasVotes}
+            className={`px-8 py-2 rounded-lg text-white font-semibold ${hasVotes && !votesSubmitted ? 'bg-gray-500' : 'bg-gray-300'}`}
+            disabled={!hasVotes || votesSubmitted}
             onClick={handleSubmitVotes}
           >
             Confirmar
           </button>
           <button
-            className={`px-8 py-2 rounded-lg font-semibold border ${hasVotes ? 'text-gray-700 border-gray-400 hover:bg-gray-50' : 'text-gray-300 border-gray-200 cursor-not-allowed'}`}
-            disabled={!hasVotes}
+            className={`px-8 py-2 rounded-lg font-semibold border ${hasVotes && !votesSubmitted ? 'text-gray-700 border-gray-400 hover:bg-gray-50' : 'text-gray-300 border-gray-200 cursor-not-allowed'}`}
+            disabled={!hasVotes || votesSubmitted}
             onClick={handleClearVotes}
           >
             Limpar votos
