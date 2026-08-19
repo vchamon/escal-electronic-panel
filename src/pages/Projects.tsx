@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 
-import { fetchProjects, sendProjectVotes } from '../services/projects'
+import { fetchProjects, ProjectNotFoundError, sendProjectVotes } from '../services/projects'
 import { useParams } from 'react-router-dom'
 import { Project, UserChoice, UserVotes } from '../types'
-import { getUserIp } from '../services/user'
+import { getUserId } from '../services/user'
+import ProjectNotFound from './ProjectNotFound'
 
 const UserChoiceLabels = {
   [UserChoice.YES]: 'A favor',
@@ -13,17 +14,28 @@ const UserChoiceLabels = {
 }
 
 const Projects = () => {
-  const [userIp, setUserIp] = useState<string>()
+  const [userId] = useState(() => getUserId())
   const [projects, setProjects] = useState<Project[]>([])
   const [userVotes, setUserVotes] = useState<UserVotes>({})
   const [showThankYouModal, setShowThankYouModal] = useState(false)
   const [votesSubmitted, setVotesSubmitted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
   const { councilSocialId } = useParams()
 
   useEffect(() => {
-    fetchProjects(councilSocialId!).then(setProjects)
-    getUserIp().then(setUserIp)
+    setIsLoading(true)
+    setNotFound(false)
+
+    fetchProjects(councilSocialId!)
+      .then(setProjects)
+      .catch((error) => {
+        if (error instanceof ProjectNotFoundError) {
+          setNotFound(true)
+        }
+      })
+      .finally(() => setIsLoading(false))
   }, [councilSocialId])
 
   const handleChangeUserVote = useCallback((projectId: number, userChoice: UserChoice) => {
@@ -40,10 +52,10 @@ const Projects = () => {
   const handleSubmitVotes = useCallback(async () => {
     if (votesSubmitted) return
 
-    await sendProjectVotes(councilSocialId!, userIp as string, userVotes)
+    await sendProjectVotes(councilSocialId!, userId, userVotes)
     setVotesSubmitted(true)
     setShowThankYouModal(true)
-  }, [councilSocialId, userIp, userVotes, votesSubmitted])
+  }, [councilSocialId, userId, userVotes, votesSubmitted])
 
   const handleClearVotes = useCallback(() => {
     if (votesSubmitted) return
@@ -97,6 +109,10 @@ const Projects = () => {
       )
     })
   }, [handleChangeUserVote, projects, userVotes, votesSubmitted])
+
+  if (isLoading) return null
+
+  if (notFound) return <ProjectNotFound />
 
   return projects.length > 0 ? (
     <div className='container mx-auto px-4 my-16'>
